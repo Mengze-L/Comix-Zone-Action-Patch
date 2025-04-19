@@ -3,6 +3,12 @@ ORIGIN_ACTION_UP_FORWARD_KICK         set $001D0F82
 
 ORIGIN_ACTION_UP_DOWN_KICK_POINTER    set $0013154C
 
+ORIGIN_SHOULDER_SMASH_ADD_DISTANCE    set $00131D1E
+ORIGIN_SHOULDER_SMASH_SUB_DISTANCE    set $00131D14
+
+ORIGIN_SHOULDER_SMASH_TILE_XY1        set $001B28EB
+ORIGIN_SHOULDER_SMASH_TILE_XY2        set $001B28F0
+
 ORIGIN_SET_BUTTON_LEFT                set $001D02B8
 ORIGIN_RETURN_BUTTON_LEFT             set $001D02BE
 
@@ -29,6 +35,10 @@ FORWARD_KICK:                         equ $001318C0
 FORWARD_KICK_FAST:                    equ $001318DA
 
 SHOULDER_SMASH:                       equ $00131CDC
+SHOULDER_SMASH_DISTANCE_ADD:          equ $0026 ; +0x26 (right) position, origin value is 0x1C
+SHOULDER_SMASH_DISTANCE_SUB:          equ $FFDA ; -0x26 (left) position, origin value is 0xFFE4
+SHOULDER_SMASH_HIT_XY1:               equ $25   ; +0x25 (forward) position, origin value is 0x1C
+SHOULDER_SMASH_HIT_XY2:               equ $26   ; +0x26 (forward) position, origin value is 0x1D
 
 UP_DOWN_KICK_FLAG_OFFSET:             equ $1E
 
@@ -58,6 +68,18 @@ BUTTON_UP_FLAG:                       equ $00FFBF89
 
         org     ORIGIN_SET_ACTION
         jmp     CHECK_SHOULDER_SMASH
+
+        org     ORIGIN_SHOULDER_SMASH_ADD_DISTANCE
+        dc.w    SHOULDER_SMASH_DISTANCE_ADD
+
+        org     ORIGIN_SHOULDER_SMASH_SUB_DISTANCE
+        dc.w    SHOULDER_SMASH_DISTANCE_SUB
+
+        org     ORIGIN_SHOULDER_SMASH_TILE_XY1
+        dc.b    SHOULDER_SMASH_HIT_XY1
+
+        org     ORIGIN_SHOULDER_SMASH_TILE_XY2
+        dc.b    SHOULDER_SMASH_HIT_XY2
 
         org     ORIGIN_DEC_BUTTON_COUNTER
         jmp     DECREASE_FLAG_COUNTERS
@@ -90,7 +112,7 @@ SKIP_TO_ORIGIN_BUTTON_RIGHT_FLAG
         jmp     ORIGIN_RETURN_BUTTON_RIGHT
 
 SET_DASH_FLAG
-        move.b  #$10,(BUTTON_FORWARD_FORWARD_FLAG)
+        move.b  #$20,(BUTTON_FORWARD_FORWARD_FLAG)
         move.b  #$0,(BUTTON_DOWN_DOWN_FLAG)
         rts
 
