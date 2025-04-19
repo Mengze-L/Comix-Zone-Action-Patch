@@ -3,6 +3,12 @@ ORIGIN_ACTION_UP_FORWARD_KICK         set $001D0F82
 
 ORIGIN_ACTION_UP_DOWN_KICK_POINTER    set $0013154C
 
+ORIGIN_SHOULDER_SMASH_ADD_DISTANCE    set $00131D1E
+ORIGIN_SHOULDER_SMASH_SUB_DISTANCE    set $00131D14
+
+ORIGIN_SHOULDER_SMASH_TILE_XY         set $001B28EB
+ORIGIN_SHOULDER_SMASH_HIT_XY          set $001B28F0
+
 ORIGIN_SET_BUTTON_LEFT                set $001D02B8
 ORIGIN_RETURN_BUTTON_LEFT             set $001D02BE
 
@@ -21,6 +27,9 @@ ORIGIN_RETURN_DEC_COUNTER             set $001D01E4
 ORIGIN_SET_ACTION                     set $001D0F36
 ORIGIN_RETURN_ACTION_SET              set $001D0F3C
 
+ORIGIN_HIT_POINT_LR_CHECK             set $001D0836
+ORIGIN_HIT_POINT_RETURN               set $001D083E
+
 BUTTON_DOWN_DOWN_FLAG                 set $00FF801E
 BUTTON_FORWARD_FORWARD_FLAG           set $00FF801F
 
@@ -29,6 +38,10 @@ FORWARD_KICK:                         equ $001318C0
 FORWARD_KICK_FAST:                    equ $001318DA
 
 SHOULDER_SMASH:                       equ $00131CDC
+SHOULDER_SMASH_DISTANCE_ADD:          equ $0026 ; +0x26 (right) position, origin value is 0x1C
+SHOULDER_SMASH_DISTANCE_SUB:          equ $FFDA ; -0x26 (left) position, origin value is 0xFFE4
+SHOULDER_SMASH_TILE_XY:               equ $25   ; +0x22 (forward) position, origin value is 0x1C
+SHOULDER_SMASH_HIT_XY:                equ $26   ; +0x23 (forward) position, origin value is 0x1D
 
 UP_DOWN_KICK_FLAG_OFFSET:             equ $1E
 
@@ -59,8 +72,24 @@ BUTTON_UP_FLAG:                       equ $00FFBF89
         org     ORIGIN_SET_ACTION
         jmp     CHECK_SHOULDER_SMASH
 
+        org     ORIGIN_SHOULDER_SMASH_ADD_DISTANCE
+        dc.w    SHOULDER_SMASH_DISTANCE_ADD
+
+        org     ORIGIN_SHOULDER_SMASH_SUB_DISTANCE
+        dc.w    SHOULDER_SMASH_DISTANCE_SUB
+
+        org     ORIGIN_SHOULDER_SMASH_TILE_XY
+        dc.b    SHOULDER_SMASH_TILE_XY
+
+        org     ORIGIN_SHOULDER_SMASH_HIT_XY
+        dc.b    SHOULDER_SMASH_HIT_XY
+
         org     ORIGIN_DEC_BUTTON_COUNTER
         jmp     DECREASE_FLAG_COUNTERS
+
+        org     ORIGIN_HIT_POINT_LR_CHECK     ; It is bug in original code using D1-D2>0 to check the hit point on left or right. It is always true/right
+        jmp     FIX_HIT_POINT_LR_CHECK
+        ;cmp.w   D0,D2
 
 ; Change: ---------------------------------------------------------------
         org     $001FD200
@@ -90,7 +119,7 @@ SKIP_TO_ORIGIN_BUTTON_RIGHT_FLAG
         jmp     ORIGIN_RETURN_BUTTON_RIGHT
 
 SET_DASH_FLAG
-        move.b  #$10,(BUTTON_FORWARD_FORWARD_FLAG)
+        move.b  #$20,(BUTTON_FORWARD_FORWARD_FLAG)
         move.b  #$0,(BUTTON_DOWN_DOWN_FLAG)
         rts
 
@@ -121,3 +150,16 @@ DECREASE_DASH_FLAG
         subi.b  #$1,(BUTTON_FORWARD_FORWARD_FLAG)
 RETURN_ORIGIN
         jmp     ORIGIN_RETURN_DEC_COUNTER
+
+FIX_HIT_POINT_LR_CHECK
+        move.l  D4,-(SP)
+        move.w  $C(A3),D4
+        cmp.w   $C(A2),D4
+        bge.s   FIX_HIT_POINT_RETURN
+        move.w  D0,D1
+        subi.w  #$2,D1
+        move.w  D3,D2
+FIX_HIT_POINT_RETURN
+        move.l  (SP)+,D4
+        jmp     ORIGIN_HIT_POINT_RETURN
+      
