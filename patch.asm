@@ -3,6 +3,8 @@ ORIGIN_ACTION_UP_FORWARD_KICK         set $001D0F82
 
 ORIGIN_ACTION_UP_DOWN_KICK_POINTER    set $0013154C
 
+ORIGIN_SHOULDER_SMASH_HIT_TYPE        set $00131CF4
+
 ORIGIN_SHOULDER_SMASH_ADD_DISTANCE    set $00131D1E
 ORIGIN_SHOULDER_SMASH_SUB_DISTANCE    set $00131D14
 
@@ -30,6 +32,8 @@ ORIGIN_RETURN_ACTION_SET              set $001D0F3C
 ORIGIN_HIT_POINT_LR_CHECK             set $001D0836
 ORIGIN_HIT_POINT_RETURN               set $001D083E
 
+ORIGIN_ACTION_HP_DECREASE             set $001D0732
+
 BUTTON_DOWN_DOWN_FLAG                 set $00FF801E
 BUTTON_FORWARD_FORWARD_FLAG           set $00FF801F
 
@@ -40,10 +44,12 @@ FORWARD_KICK_FAST:                    equ $001318DA
 SHOULDER_SMASH:                       equ $00131CDC
 SHOULDER_SMASH_DISTANCE_ADD:          equ $0026 ; +0x26 (right) position, origin value is 0x1C
 SHOULDER_SMASH_DISTANCE_SUB:          equ $FFDA ; -0x26 (left) position, origin value is 0xFFE4
-SHOULDER_SMASH_TILE_XY:               equ $25   ; +0x22 (forward) position, origin value is 0x1C
-SHOULDER_SMASH_HIT_XY:                equ $26   ; +0x23 (forward) position, origin value is 0x1D
+SHOULDER_SMASH_TILE_XY:               equ $21   ; +0x21 (forward) position, origin value is 0x1C
+SHOULDER_SMASH_HIT_XY:                equ $26   ; +0x26 (forward) position, origin value is 0x1D
 
 UP_DOWN_KICK_FLAG_OFFSET:             equ $1E
+
+CHARACTOR_HP:                         equ $00FFBF04
 
 BUTTON_RIGHT_FLAG:                    equ $00FFBF86
 BUTTON_LEFT_FLAG:                     equ $00FFBF87
@@ -72,6 +78,9 @@ BUTTON_UP_FLAG:                       equ $00FFBF89
         org     ORIGIN_SET_ACTION
         jmp     CHECK_SHOULDER_SMASH
 
+        ;org     ORIGIN_SHOULDER_SMASH_HIT_TYPE
+        ;dc.w    $8
+
         org     ORIGIN_SHOULDER_SMASH_ADD_DISTANCE
         dc.w    SHOULDER_SMASH_DISTANCE_ADD
 
@@ -90,6 +99,23 @@ BUTTON_UP_FLAG:                       equ $00FFBF89
         org     ORIGIN_HIT_POINT_LR_CHECK     ; It is bug in original code using D1-D2>0 to check the hit point on left or right. It is always true/right
         jmp     FIX_HIT_POINT_LR_CHECK
         ;cmp.w   D0,D2
+
+        org      ORIGIN_ACTION_HP_DECREASE
+        move.w   $12(A3),D1
+        andi.w   #$F000,D1
+        cmpi.w   #$1000,D1
+        beq.s    CHECK_KNOCK_DOWN
+        bra.s    SKIP_HP_DECREASE
+CHECK_KNOCK_DOWN
+        cmpi.w   #$100,D0
+        bne.s    DECREASE_HP
+        moveq    #$20,D0
+DECREASE_HP
+        sub.w    D0,(CHARACTOR_HP).w
+        cmpi.w   #$20,(CHARACTOR_HP).w
+        bge.s    SKIP_HP_DECREASE
+        add.w    D0,(CHARACTOR_HP).w
+SKIP_HP_DECREASE
 
 ; Change: ---------------------------------------------------------------
         org     $001FD200
