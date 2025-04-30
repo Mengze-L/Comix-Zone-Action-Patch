@@ -26,6 +26,10 @@ ORIGIN_RETURN_BUTTON_UP               set $001D024A
 ORIGIN_DEC_BUTTON_COUNTER             set $001D01DE
 ORIGIN_RETURN_DEC_COUNTER             set $001D01E4
 
+ORIGIN_CHECK_CHANGE_ACTION            set $001D0F1A
+ORIGIN_RETURN_NO_ACTION_CHANGE        set $001D0F22
+ORIGIN_CHANGE_ACTION                  set $001D0F24
+
 ORIGIN_SET_ACTION                     set $001D0F36
 ORIGIN_RETURN_ACTION_SET              set $001D0F3C
 
@@ -56,6 +60,8 @@ BUTTON_LEFT_FLAG:                     equ $00FFBF87
 BUTTON_DOWN_FLAG:                     equ $00FFBF88
 BUTTON_UP_FLAG:                       equ $00FFBF89
 
+BYTE_FFBF92:                          equ $00FFBF92
+
 ; Overrides: -----------------------------------------------------------
         org     ORIGIN_ACTION_UP_FORWARD_KICK
         dc.l    FORWARD_KICK
@@ -74,6 +80,9 @@ BUTTON_UP_FLAG:                       equ $00FFBF89
 
         org     ORIGIN_SET_BUTTON_UP
         jmp     CLEAR_PREVIOUS_ACTION_FLAG
+
+        org     ORIGIN_CHECK_CHANGE_ACTION
+        jmp     CHECK_CHANGE_ACTION
 
         org     ORIGIN_SET_ACTION
         jmp     CHECK_SHOULDER_SMASH
@@ -154,6 +163,17 @@ CLEAR_PREVIOUS_ACTION_FLAG
         move.b  #$0,(BUTTON_FORWARD_FORWARD_FLAG)
         move.b  #$10,(BUTTON_UP_FLAG)
         jmp     ORIGIN_RETURN_BUTTON_UP
+
+CHECK_CHANGE_ACTION
+        cmp.w   D6,D7
+        bne.s   CHANGE_ACTION
+        tst.b   (BUTTON_FORWARD_FORWARD_FLAG)
+        bne.s   CHANGE_ACTION
+        st      (BYTE_FFBF92).w
+        jmp     ORIGIN_RETURN_NO_ACTION_CHANGE
+CHANGE_ACTION
+        jmp     ORIGIN_CHANGE_ACTION
+
 
 CHECK_SHOULDER_SMASH
         tst.b   (BUTTON_FORWARD_FORWARD_FLAG)
